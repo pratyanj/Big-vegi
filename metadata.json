@@ -1,0 +1,7 @@
+{
+  "name": "Flatmate Grocery Tracker",
+  "description": "Track vegetable and fruit purchases, auto-detect items using the camera, and view monthly financial summaries.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

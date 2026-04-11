@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId
+    // Fields:
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - photoUrl: string (optional)
+    //
+    // Collection: trips
+    // Document ID: auto-generated
+    // Fields:
+    //   - date: string (required, ISO 8601)
+    //   - totalCost: number (required, positive)
+    //   - buyerId: string (required, must match auth.uid)
+    //   - buyerName: string (required)
+    //   - items: list of objects (required)
+    //     - name: string
+    //     - quantity: number
+    //     - unit: string ('g', 'kg', 'pcs')
+    //     - price: number
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && (email == "" || email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"));
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function isValidUser(data) {
+      return hasRequiredFields(['name', 'email']) &&
+             hasOnlyAllowedFields(['name', 'email', 'photoUrl']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             isValidEmail(data.email) &&
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() < 2000));
+    }
+
+    function isValidTripItem(item) {
+      return item.keys().hasAll(['name', 'quantity', 'unit', 'price']) &&
+             item.name is string && item.name.size() > 0 && item.name.size() < 100 &&
+             item.quantity is number && item.quantity > 0 &&
+             item.unit in ['g', 'kg', 'pcs'] &&
+             item.price is number && item.price >= 0;
+    }
+
+    function areValidTripItems(items) {
+      return items is list && items.size() <= 100 && items.size() > 0;
+    }
+
+    function isValidTrip(data) {
+      return hasRequiredFields(['date', 'totalCost', 'buyerId', 'buyerName', 'items']) &&
+             hasOnlyAllowedFields(['date', 'totalCost', 'buyerId', 'buyerName', 'items']) &&
+             isValidDateString(data.date) &&
+             data.totalCost is number && data.totalCost >= 0 &&
+             data.buyerId is string && data.buyerId == request.auth.uid &&
+             data.buyerName is string && data.buyerName.size() > 0 && data.buyerName.size() < 100 &&
+             areValidTripItems(data.items);
+    }
+
+    function isWithinOneWeek(dateStr) {
+      return (request.time.toMillis() - timestamp.value(dateStr).toMillis()) <= 604800000; // 7 days in ms
+    }
+
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles (to see flatmates)
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow delete: if false; // Users cannot be deleted
+    }
+
+    match /trips/{tripId} {
+      // Anyone authenticated can read trips
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidTrip(request.resource.data);
+      allow update: if isAuthenticated() && 
+                    resource.data.buyerId == request.auth.uid && 
+                    isValidTrip(request.resource.data) &&
+                    request.resource.data.buyerId == resource.data.buyerId &&
+                    request.resource.data.date == resource.data.date &&
+                    isWithinOneWeek(resource.data.date);
+      allow delete: if isAuthenticated() && resource.data.buyerId == request.auth.uid;
+    }
+  }
+}

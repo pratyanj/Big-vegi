@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A flatmate who buys groceries.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "photoUrl": { "type": "string" }
+      },
+      "required": ["name", "email"]
+    },
+    "ShoppingTrip": {
+      "title": "Shopping Trip",
+      "description": "A record of a grocery shopping trip.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date-time" },
+        "totalCost": { "type": "number" },
+        "buyerId": { "type": "string" },
+        "buyerName": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "unit": { "type": "string", "enum": ["g", "kg", "pcs"] },
+              "price": { "type": "number" }
+            },
+            "required": ["name", "quantity", "unit", "price"]
+          }
+        }
+      },
+      "required": ["date", "totalCost", "buyerId", "buyerName", "items"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores user profiles."
+    },
+    "/trips/{tripId}": {
+      "schema": { "$ref": "#/entities/ShoppingTrip" },
+      "description": "Stores all shopping trips."
+    }
+  }
+}
