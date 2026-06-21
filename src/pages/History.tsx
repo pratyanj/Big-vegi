@@ -42,8 +42,8 @@ const EditableTripItem: React.FC<EditableTripItemProps> = ({
             type="number"
             min="0.1"
             step="0.1"
-            value={editedItem.quantity}
-            onChange={(e) => setEditedItem({ ...editedItem, quantity: parseFloat(e.target.value) || 0 })}
+            value={editedItem.quantity === 0 ? '' : editedItem.quantity}
+            onChange={(e) => setEditedItem({ ...editedItem, quantity: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
             className="w-full px-2 py-1 text-sm bg-white border border-stone-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
@@ -63,16 +63,16 @@ const EditableTripItem: React.FC<EditableTripItemProps> = ({
             type="number"
             min="0"
             step="0.01"
-            value={editedItem.price}
-            onChange={(e) => setEditedItem({ ...editedItem, price: parseFloat(e.target.value) || 0 })}
+            value={editedItem.price === 0 ? '' : editedItem.price}
+            onChange={(e) => setEditedItem({ ...editedItem, price: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
             className="w-full px-2 py-1 text-sm bg-white border border-stone-300 rounded focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
         </div>
         <div className="flex items-center gap-1 justify-end mt-2 sm:mt-0">
           <button
             onClick={() => {
-              if (editedItem.name.trim() === '' || editedItem.quantity <= 0 || editedItem.price < 0) {
-                alert('Please fill in valid item details');
+              if (editedItem.name.trim() === '' || editedItem.quantity <= 0 || editedItem.price <= 0) {
+                alert('Please fill in valid item details (Name, Quantity > 0, Price > 0)');
                 return;
               }
               onSave(editedItem);

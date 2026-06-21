@@ -54,8 +54,8 @@ const NewTripItem: React.FC<NewTripItemProps> = ({
             type="number"
             min="0.1"
             step="0.1"
-            value={item.quantity}
-            onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+            value={item.quantity === 0 ? '' : item.quantity}
+            onChange={(e) => updateItem(index, 'quantity', e.target.value === '' ? 0 : parseFloat(e.target.value))}
             className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
@@ -77,16 +77,16 @@ const NewTripItem: React.FC<NewTripItemProps> = ({
             type="number"
             min="0"
             step="0.01"
-            value={item.price}
-            onChange={(e) => updateItem(index, 'price', parseFloat(e.target.value) || 0)}
+            value={item.price === 0 ? '' : item.price}
+            onChange={(e) => updateItem(index, 'price', e.target.value === '' ? 0 : parseFloat(e.target.value))}
             className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
         <div className="flex items-end gap-2 pb-1">
           <button
             onClick={() => {
-              if (item.name.trim() === '') {
-                alert('Item name cannot be empty');
+              if (item.name.trim() === '' || item.quantity <= 0 || item.price <= 0) {
+                alert('Please fill in all fields (Name, Quantity > 0, Price > 0)');
                 return;
               }
               setIsEditing(false);
@@ -154,7 +154,7 @@ export default function NewTrip() {
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newItem, setNewItem] = useState<ShoppingItem>({ name: '', quantity: 1, unit: 'kg', price: 0 });
+  const [newItem, setNewItem] = useState<ShoppingItem>({ name: '', quantity: 0, unit: 'kg', price: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -424,8 +424,8 @@ export default function NewTrip() {
                     <input
                       type="number"
                       min="0.1" step="0.1"
-                      value={newItem.quantity}
-                      onChange={(e) => setNewItem({ ...newItem, quantity: parseFloat(e.target.value) || 0 })}
+                      value={newItem.quantity === 0 ? '' : newItem.quantity}
+                      onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                       className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                     />
                   </div>
@@ -448,8 +448,8 @@ export default function NewTrip() {
                   <input
                     type="number"
                     min="0" step="0.01"
-                    value={newItem.price}
-                    onChange={(e) => setNewItem({ ...newItem, price: parseFloat(e.target.value) || 0 })}
+                    value={newItem.price === 0 ? '' : newItem.price}
+                    onChange={(e) => setNewItem({ ...newItem, price: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                     className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                   />
                 </div>
@@ -464,12 +464,12 @@ export default function NewTrip() {
                 </button>
                 <button
                   onClick={() => {
-                    if (!newItem.name.trim()) {
-                      alert('Item name cannot be empty');
+                    if (!newItem.name.trim() || newItem.quantity <= 0 || newItem.price <= 0) {
+                      alert('Please fill in all fields (Name, Quantity > 0, Price > 0)');
                       return;
                     }
                     setItems([{ id: crypto.randomUUID(), ...newItem }, ...items]);
-                    setNewItem({ name: '', quantity: 1, unit: 'kg', price: 0 });
+                    setNewItem({ name: '', quantity: 0, unit: 'kg', price: 0 });
                     setIsAddModalOpen(false);
                   }}
                   className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium"
