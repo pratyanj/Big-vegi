@@ -66,3 +66,5 @@ ios/App/App/capacitor.plugins.json
 capacitor-cordova-android-plugins/
 # Firebase configuration
 android/app/google-services.json
+# Firebase Web/Applet configuration
+firebase-applet-config.json
