@@ -1,11 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShoppingBag } from 'lucide-react';
 
 export default function Login() {
-  const { login, loginWithRedirect, user, loading } = useAuth();
+  const { login, loginAsDemo, user, loading } = useAuth();
   const navigate = useNavigate();
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isDemoLoggingIn, setIsDemoLoggingIn] = useState(false);
 
   useEffect(() => {
     if (user && !loading) {
@@ -13,23 +16,61 @@ export default function Login() {
     }
   }, [user, loading, navigate]);
 
+  const handleLogin = async () => {
+    setErrorMsg(null);
+    setIsLoggingIn(true);
+    try {
+      await login();
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err?.message || JSON.stringify(err) || 'Authentication failed. Please verify your Google setup.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setErrorMsg(null);
+    setIsDemoLoggingIn(true);
+    try {
+      await loginAsDemo();
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err?.message || JSON.stringify(err) || 'Demo access failed.');
+    } finally {
+      setIsDemoLoggingIn(false);
+    }
+  };
+
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-stone-50">Loading...</div>;
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <ShoppingBag className="w-10 h-10 text-emerald-600" />
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 text-center border border-stone-100 dark:border-stone-800">
+        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mx-auto mb-6">
+          <ShoppingBag className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
         </div>
-        <h1 className="text-3xl font-bold text-stone-900 mb-2">Flatmate Groceries</h1>
-        <p className="text-stone-500 mb-8">
+        <h1 className="text-3xl font-bold text-stone-900 dark:text-stone-50 mb-2">Big Vegi</h1>
+        <p className="text-stone-500 dark:text-stone-400 mb-6">
           Track vegetable and fruit purchases, split costs, and view monthly summaries with your flatmates.
         </p>
+
+        {errorMsg && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 text-sm rounded-xl text-left border border-red-100 dark:border-red-900/50 break-words">
+            <span className="font-semibold">Sign-in Error:</span>
+            <p className="mt-1 font-mono text-xs">{errorMsg}</p>
+            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+              Note: Android Google Sign-In requires your debug SHA-1 key to be registered in Firebase Console.
+            </p>
+          </div>
+        )}
+
         <button
-          onClick={login}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center space-x-2 mb-3"
+          onClick={handleLogin}
+          disabled={isLoggingIn || isDemoLoggingIn}
+          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center space-x-2"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -49,18 +90,16 @@ export default function Login() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          <span>Sign in with Google</span>
+          <span>{isLoggingIn ? 'Connecting...' : 'Sign in with Google'}</span>
         </button>
-        
+
         <button
-          onClick={loginWithRedirect}
-          className="w-full bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center space-x-2"
+          onClick={handleDemoLogin}
+          disabled={isLoggingIn || isDemoLoggingIn}
+          className="w-full bg-white dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-750 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700 font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center space-x-2 mt-3 shadow-xs"
         >
-          <span>Sign in with Redirect (Mobile)</span>
+          <span>{isDemoLoggingIn ? 'Entering...' : 'Try Demo Mode'}</span>
         </button>
-        <p className="text-xs text-stone-400 mt-4">
-          If you are on a mobile device or having trouble signing in, try the redirect option.
-        </p>
       </div>
     </div>
   );

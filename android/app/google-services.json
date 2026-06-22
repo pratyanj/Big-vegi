@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "359145535347",
+    "project_id": "gen-lang-client-0500520630",
+    "storage_bucket": "gen-lang-client-0500520630.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:359145535347:android:38dac6690f7cc6e9ec7706",
+        "android_client_info": {
+          "package_name": "com.bigvegi.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "359145535347-d07p35nmlbbnn3qvk7eoilk4aqag49ea.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7cLnekwr7dLp4ZYS7Db4f1zvq1wdqTPc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "359145535347-d07p35nmlbbnn3qvk7eoilk4aqag49ea.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

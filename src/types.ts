@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   photoUrl?: string;
+  flatId?: string;
 }
 
 export interface ShoppingItem {
@@ -19,4 +20,5 @@ export interface ShoppingTrip {
   buyerId: string;
   buyerName: string;
   items: ShoppingItem[];
+  flatId?: string;
 }

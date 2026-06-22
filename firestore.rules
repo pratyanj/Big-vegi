@@ -52,12 +52,19 @@ service cloud.firestore {
       return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
     }
 
+    function isMemberOfFlat(flatId) {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.flatId == flatId;
+    }
+
     function isValidUser(data) {
       return hasRequiredFields(['name', 'email']) &&
-             hasOnlyAllowedFields(['name', 'email', 'photoUrl']) &&
+             hasOnlyAllowedFields(['name', 'email', 'photoUrl', 'flatId']) &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              isValidEmail(data.email) &&
-             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() < 2000));
+             (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() < 2000)) &&
+             (!('flatId' in data) || (data.flatId is string && data.flatId.size() < 50));
     }
 
     function isValidTripItem(item) {
@@ -73,17 +80,22 @@ service cloud.firestore {
     }
 
     function isValidTrip(data) {
-      return hasRequiredFields(['date', 'totalCost', 'buyerId', 'buyerName', 'items']) &&
-             hasOnlyAllowedFields(['date', 'totalCost', 'buyerId', 'buyerName', 'items']) &&
+      return hasRequiredFields(['date', 'totalCost', 'buyerId', 'buyerName', 'items', 'flatId']) &&
+             hasOnlyAllowedFields(['date', 'totalCost', 'buyerId', 'buyerName', 'items', 'flatId']) &&
              isValidDateString(data.date) &&
              data.totalCost is number && data.totalCost >= 0 &&
              data.buyerId is string && data.buyerId == request.auth.uid &&
              data.buyerName is string && data.buyerName.size() > 0 && data.buyerName.size() < 100 &&
+             data.flatId is string && data.flatId.size() > 0 &&
              areValidTripItems(data.items);
     }
 
     function isWithinOneWeek(dateStr) {
       return (request.time.toMillis() - timestamp.value(dateStr).toMillis()) <= 604800000; // 7 days in ms
+    }
+
+    match /flats/{flatId} {
+      allow read, create, update: if isAuthenticated();
     }
 
     match /users/{userId} {
@@ -95,16 +107,37 @@ service cloud.firestore {
     }
 
     match /trips/{tripId} {
-      // Anyone authenticated can read trips
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidTrip(request.resource.data);
+      allow read: if isAuthenticated() && isMemberOfFlat(resource.data.flatId);
+      allow create: if isAuthenticated() && isMemberOfFlat(request.resource.data.flatId) && isValidTrip(request.resource.data);
       allow update: if isAuthenticated() && 
+                    isMemberOfFlat(resource.data.flatId) &&
                     resource.data.buyerId == request.auth.uid && 
                     isValidTrip(request.resource.data) &&
                     request.resource.data.buyerId == resource.data.buyerId &&
                     request.resource.data.date == resource.data.date &&
                     isWithinOneWeek(resource.data.date);
-      allow delete: if isAuthenticated() && resource.data.buyerId == request.auth.uid;
+      allow delete: if isAuthenticated() && isMemberOfFlat(resource.data.flatId) && resource.data.buyerId == request.auth.uid;
+    }
+
+    match /shopping_list/{itemId} {
+      allow read: if isAuthenticated() && isMemberOfFlat(resource.data.flatId);
+      allow create: if isAuthenticated() && isMemberOfFlat(request.resource.data.flatId) &&
+                    request.resource.data.name is string && 
+                    request.resource.data.name.size() > 0 &&
+                    request.resource.data.name.size() < 100 &&
+                    request.resource.data.quantity is number &&
+                    request.resource.data.quantity > 0 &&
+                    request.resource.data.unit in ['g', 'kg', 'pcs'] &&
+                    request.resource.data.addedBy == request.auth.uid;
+      allow update: if isAuthenticated() && isMemberOfFlat(request.resource.data.flatId) &&
+                    request.resource.data.name is string &&
+                    request.resource.data.name.size() > 0 &&
+                    request.resource.data.name.size() < 100 &&
+                    request.resource.data.quantity is number &&
+                    request.resource.data.quantity > 0 &&
+                    request.resource.data.unit in ['g', 'kg', 'pcs'] &&
+                    request.resource.data.flatId == resource.data.flatId;
+      allow delete: if isAuthenticated();
     }
   }
 }
